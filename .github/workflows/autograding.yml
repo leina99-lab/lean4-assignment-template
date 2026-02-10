@@ -1,0 +1,83 @@
+name: Lean4 Autograding
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install elan
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+
+      - name: Build project
+        run: |
+          lake build
+          echo "빌드 성공!"
+
+      - name: Grade - 문제 1 (add_comm)
+        run: |
+          echo "=== 문제 1: add_comm 채점 ==="
+          START=$(grep -n "theorem add_comm" Assignment/Basic.lean | head -1 | cut -d: -f1)
+          END=$(awk "NR>$START && /^theorem |^-- 문제/{print NR; exit}" Assignment/Basic.lean)
+          if [ -z "$END" ]; then
+            END=$(wc -l < Assignment/Basic.lean)
+          fi
+          SECTION=$(sed -n "${START},${END}p" Assignment/Basic.lean)
+          if echo "$SECTION" | grep -q "sorry"; then
+            echo "sorry가 남아있습니다"
+            exit 1
+          else
+            echo "통과! (30점)"
+          fi
+
+      - name: Grade - 문제 2 (append_assoc)
+        run: |
+          echo "=== 문제 2: append_assoc 채점 ==="
+          START=$(grep -n "theorem append_assoc" Assignment/Basic.lean | head -1 | cut -d: -f1)
+          END=$(awk "NR>$START && /^theorem |^-- 문제/{print NR; exit}" Assignment/Basic.lean)
+          if [ -z "$END" ]; then
+            END=$(wc -l < Assignment/Basic.lean)
+          fi
+          SECTION=$(sed -n "${START},${END}p" Assignment/Basic.lean)
+          if echo "$SECTION" | grep -q "sorry"; then
+            echo "sorry가 남아있습니다"
+            exit 1
+          else
+            echo "통과! (30점)"
+          fi
+
+      - name: Grade - 문제 3 (comp_assoc)
+        run: |
+          echo "=== 문제 3: comp_assoc 채점 ==="
+          START=$(grep -n "theorem comp_assoc" Assignment/Basic.lean | head -1 | cut -d: -f1)
+          END=$(awk "NR>$START && /^theorem |^-- 문제/{print NR; exit}" Assignment/Basic.lean)
+          if [ -z "$END" ]; then
+            END=$(wc -l < Assignment/Basic.lean)
+          fi
+          SECTION=$(sed -n "${START},${END}p" Assignment/Basic.lean)
+          if echo "$SECTION" | grep -q "sorry"; then
+            echo "sorry가 남아있습니다"
+            exit 1
+          else
+            echo "통과! (40점)"
+          fi
+
+      - name: Final Result
+        if: always()
+        run: |
+          echo "=============================="
+          echo "  채점 완료"
+          echo "  Actions 탭에서 각 문제별"
+          echo "  통과 여부를 확인하세요"
+          echo "=============================="
